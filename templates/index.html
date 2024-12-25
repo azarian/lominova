@@ -4,37 +4,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lominova - Job Submission</title>
+    <title>Lominova - Unstructured Content Understanding</title>
     <style>
+        /* Base styles */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f4f4f9;
             color: #333;
+            scroll-behavior: smooth;
         }
 
-        .header {
-            background-color: #4CAF50;
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: #4CAF50;
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Hero Section */
+        #hero {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
-            text-align: center;
-            padding: 1rem 0;
         }
 
-        .container {
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-image {
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Try It Section */
+        #try-it {
+            background-color: white;
+        }
+
+        .try-it-container {
             max-width: 800px;
-            margin: 2rem auto;
+            margin: 0 auto;
             background: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        h1,
-        h2 {
-            color: #5f72d3;
-        }
-
+        /* Form styles from your original CSS */
         label {
             font-weight: bold;
             display: block;
@@ -74,45 +152,132 @@
             overflow-y: auto;
         }
 
+        /* Team Section */
+        #team {
+            background-color: #f8f9fa;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .team-member {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-member img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
         .footer {
             text-align: center;
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            color: #666;
+            padding: 2rem;
+            background-color: #333;
+            color: white;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <h1>Lominova</h1>
-        <p>Your Trusted Partner in Automation</p>
-    </div>
-
-    <div class="container">
-        <h2>Job Submission</h2>
-        <form id="jobForm">
-            <label for="fileInput">Select File:</label>
-            <input type="file" id="fileInput" required>
-
-            <label for="configInput">Configuration JSON:</label>
-            <textarea id="configInput" rows="6" placeholder='{"validation": {}, "load": {"output": ""}}'
-                required></textarea>
-
-            <button type="submit">Run Job</button>
-        </form>
-
-        <div id="output">
-            <h3>Job Output</h3>
-            <div id="outputContent">Waiting for job...</div>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="#" class="nav-logo">Lominova</a>
+            <div class="nav-links">
+                <a href="#hero">Home</a>
+                <a href="#try-it">Try It</a>
+                <a href="#team">Team</a>
+            </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="footer">
-        &copy; 2024 Lominova. All rights reserved.
-    </div>
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="section-content">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Understanding Unstructured Content Made Simple</h1>
+                    <p>Leverage our powerful API to extract meaningful insights from any type of unstructured data.
+                        Perfect for businesses looking to automate content analysis and understanding.</p>
+                </div>
+                <div class="hero-image">
+                    <img src="/api/placeholder/500/400" alt="Content Understanding Visualization">
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- Try It Section -->
+    <section id="try-it">
+        <div class="section-content">
+            <div class="try-it-container">
+                <h2>Try It Out</h2>
+                <form id="jobForm">
+                    <label for="fileInput">Select File:</label>
+                    <input type="file" id="fileInput" required>
+
+                    <label for="configInput">Configuration JSON:</label>
+                    <textarea id="configInput" rows="6" placeholder='{"validation": {}, "load": {"output": ""}}'
+                        required></textarea>
+
+                    <button type="submit">Run Job</button>
+                </form>
+
+                <div id="output">
+                    <h3>Job Output</h3>
+                    <div id="outputContent">Waiting for job...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team">
+        <div class="section-content">
+            <h2>Our Team</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="/api/placeholder/150/150" alt="Team Member 1">
+                    <h3>Sarah Chen</h3>
+                    <p>Chief Technology Officer</p>
+                    <p>Expert in machine learning and natural language processing with 10+ years of experience.</p>
+                </div>
+                <div class="team-member">
+                    <img src="/api/placeholder/150/150" alt="Team Member 2">
+                    <h3>David Kumar</h3>
+                    <p>Lead Engineer</p>
+                    <p>Specialized in scalable systems and API architecture. Previously led engineering teams at top
+                        tech companies.</p>
+                </div>
+                <div class="team-member">
+                    <img src="/api/placeholder/150/150" alt="Team Member 3">
+                    <h3>Maria Rodriguez</h3>
+                    <p>Head of Product</p>
+                    <p>Product strategist with deep expertise in AI solutions and customer experience design.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 Lominova. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
     <script>
+        // Your existing JavaScript
         document.getElementById('jobForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 
@@ -177,6 +342,16 @@
                 console.error("Error submitting job:", error);
                 alert("Failed to submit job.");
             }
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
         });
     </script>
 </body>

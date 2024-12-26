@@ -3,61 +3,134 @@ import threading
 import uuid
 import time
 import json
-
-# Placeholder for AWS SDK imports (e.g., boto3 for AWS API calls)
+from textractor import Textractor
+import boto3
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 jobs = {}
 
-def evaluate_execution_plan(config):
-    """Simulates evaluating the JSON configuration and generates an execution plan."""
-    print("Evaluating execution plan:")
-    print("- Using AWS API: analyzeExpense")
-    print("- Validating fields")
-    print("- Writing to Google Sheets")
+DRY_RUN = True
 
-def process_job(job_id, file, config):
-    jobs[job_id]['step'] = 'Prepareing Execution Plan'
-    time.sleep(5)  # Simulate preparing execution plan
-    jobs[job_id]['step'] = 'Execution Plan Ready'
-    jobs[job_id]['outcomes']['Execution Plan'] = "[file]->[analyzeExpense]->[validate]->[write_to_google_sheets]"
-    jobs[job_id]['step'] = 'Processing file'
-    time.sleep(5) 
+def initialize_textractor():
+    """Initialize Textractor client with AWS credentials"""
     try:
-        # Simulate calling AWS API
-        jobs[job_id]['outcomes']['aws_api'] = "Calling AWS API: analyzeExpense"
-        print(jobs[job_id]['outcomes']['aws_api'])
-        time.sleep(5) 
+        # Assuming AWS credentials are configured in the environment
+        textract_client = boto3.client('textract')
+        return Textractor(textract_client=textract_client)
+    except Exception as e:
+        print(f"Error initializing Textractor: {e}")
+        return None
 
-        # Placeholder for AWS analyzeExpense logic
-        extracted_data = {"placeholder_field": 1}  # Simulated extracted data
+def extract_document_info(file_path, textractor_client,dry_run=False):
+    """
+    Extract information from document using Textractor
+    Returns a dictionary of extracted fields and their values
+    """
+    if dry_run:
+        return {
+            "forms": {
+                "field1": "value1",
+                "field2": "value2"
+            },
+            "tables": [
+                ["row1", "row2"],
+                ["col1", "col2"]
+            ],
+            "raw_text": "This is a sample text"
+        }
+    try:
+        # Process the document
+        document = textractor_client.process_document(file_path)
+        
+        # Extract forms (key-value pairs)
+        forms_dict = {}
+        for field in document.forms:
+            if field.key and field.value:  # Ensure both key and value exist
+                forms_dict[field.key.text] = field.value.text
+        
+        # Extract tables
+        tables_data = []
+        for table in document.tables:
+            table_data = []
+            for row in table.rows:
+                row_data = [cell.text if cell else "" for cell in row.cells]
+                table_data.append(row_data)
+            tables_data.append(table_data)
+        
+        return {
+            "forms": forms_dict,
+            "tables": tables_data,
+            "raw_text": document.text
+        }
+    except Exception as e:
+        raise Exception(f"Error extracting document info: {str(e)}")
 
-        # Perform validation
-        jobs[job_id]['step'] = 'Validating data'
-        print("Performing validation")
-        time.sleep(5) 
-        validation_passed = True
-        for field, constraints in config['validation'].items():
-            if field in extracted_data:
-                value = extracted_data[field]
-                if constraints.get('>') is not None and value <= constraints['>']:
-                    validation_passed = False
-                    error_message = f"Validation failed for {field}: value must be > {constraints['>']}"
-                    jobs[job_id]['outcomes']['validation'] = error_message
-                    print(error_message)
+def validate_extracted_data(extracted_data, validation_config):
+    """Validate extracted data against configuration rules"""
+    validation_results = {
+        "passed": True,
+        "errors": []
+    }
+    
+    for field, constraints in validation_config.items():
+        # Check in forms data
+        if field in extracted_data['forms']:
+            value = extracted_data['forms'][field]
+            
+            # Handle numeric validations
+            if any(op in constraints for op in ['>', '<', '>=', '<=']):
+                try:
+                    value = float(value)
+                    for op, threshold in constraints.items():
+                        if op == '>' and not value > threshold:
+                            validation_results['errors'].append(f"{field} must be greater than {threshold}")
+                        elif op == '<' and not value < threshold:
+                            validation_results['errors'].append(f"{field} must be less than {threshold}")
+                        elif op == '>=' and not value >= threshold:
+                            validation_results['errors'].append(f"{field} must be greater than or equal to {threshold}")
+                        elif op == '<=' and not value <= threshold:
+                            validation_results['errors'].append(f"{field} must be less than or equal to {threshold}")
+                except ValueError:
+                    validation_results['errors'].append(f"{field} must be a number")
+            
+            # Handle required fields
+            if constraints.get('required', False) and not value:
+                validation_results['errors'].append(f"{field} is required but empty")
 
-        if not validation_passed:
-            jobs[job_id]['step'] = 'Validation failed'
+    validation_results['passed'] = len(validation_results['errors']) == 0
+    return validation_results
+
+def process_job(job_id, file_path, config):
+    try:
+        jobs[job_id]['step'] = 'Initializing Textractor'
+        textractor_client = None
+        if not DRY_RUN:
+            textractor_client = initialize_textractor()
+            if not textractor_client:
+                raise Exception("Failed to initialize Textractor client")
+
+        jobs[job_id]['step'] = 'Extracting Document Information'
+        extracted_data = extract_document_info(file_path, textractor_client,dry_run=DRY_RUN)
+        jobs[job_id]['outcomes']['extraction'] = "Document processed successfully"
+        
+        # Validate extracted data
+        jobs[job_id]['step'] = 'Validating Data'
+        validation_results = validate_extracted_data(extracted_data, config.get('validation', {}))
+        jobs[job_id]['outcomes']['validation'] = validation_results
+        
+        if not validation_results['passed']:
+            jobs[job_id]['step'] = 'Validation Failed'
             return
-        time.sleep(5) 
-        # Simulate writing to Google Sheets
+        
+        # Write to Google Sheets (placeholder - implement your Google Sheets logic)
         jobs[job_id]['step'] = 'Writing to Google Sheets'
         google_sheet_url = config['load']['output']
-        print(f"Writing to Google Sheets at {google_sheet_url}")
-        jobs[job_id]['outcomes']['google_sheets'] = f"Written to Google Sheets at {google_sheet_url}"
-
-        # Finalize job
+        # Add your Google Sheets writing logic here
+        
+        jobs[job_id]['outcomes']['extracted_data'] = extracted_data
         jobs[job_id]['step'] = 'Completed'
+        
     except Exception as e:
         jobs[job_id]['step'] = 'Error'
         jobs[job_id]['outcomes']['error'] = str(e)
@@ -69,21 +142,31 @@ def index():
 
 @app.route('/submit-job', methods=['POST'])
 def submit_job():
-    data = request.json
-    file = data.get('file')
-    config = data.get('config')
-
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+        
+    file = request.files['file']
+    config = request.form.get('config')
+    
     if not file or not config:
         return jsonify({"error": "File and config are required."}), 400
-
+    
+    try:
+        config = json.loads(config)
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid JSON configuration"}), 400
+    
+    # Save the file temporarily
+    file_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
+    file.save(file_path)
+    
     job_id = str(uuid.uuid4())
     jobs[job_id] = {
         'step': 'Queued',
         'outcomes': {}
     }
-
-    threading.Thread(target=process_job, args=(job_id, file, config)).start()
-
+    
+    threading.Thread(target=process_job, args=(job_id, file_path, config)).start()
     return jsonify({"job_id": job_id}), 202
 
 @app.route('/job-status/<job_id>', methods=['GET'])
@@ -91,7 +174,6 @@ def job_status(job_id):
     job = jobs.get(job_id)
     if not job:
         return jsonify({"error": "Job ID not found."}), 404
-
     return jsonify({
         "job_id": job_id,
         "step": job['step'],

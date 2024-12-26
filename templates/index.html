@@ -277,7 +277,6 @@
 
     <!-- Scripts -->
     <script>
-        // Your existing JavaScript
         document.getElementById('jobForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 
@@ -290,21 +289,20 @@
                 return;
             }
 
-            const config = JSON.parse(configInput.value);
-
-            // Simulate file upload (for this prototype, we only send the file name)
-            const fileName = fileInput.files[0].name;
-
             try {
+                // Validate JSON configuration
+                const config = JSON.parse(configInput.value);
+
+                // Create FormData object to handle file upload
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('config', JSON.stringify(config));
+
+                outputContent.innerHTML = "Uploading file and submitting job...";
+
                 const response = await fetch('/submit-job', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        file: fileName,
-                        config: config
-                    }),
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -315,36 +313,60 @@
                 }
 
                 const jobId = data.job_id;
-                outputContent.innerHTML = `Job submitted. Job ID: ${jobId}`;
+                outputContent.innerHTML = `Job submitted. Job ID: ${jobId}<br>Waiting for processing...`;
 
                 // Poll for job status
                 const intervalId = setInterval(async () => {
-                    const statusResponse = await fetch(`/job-status/${jobId}`);
-                    const statusData = await statusResponse.json();
+                    try {
+                        const statusResponse = await fetch(`/job-status/${jobId}`);
+                        const statusData = await statusResponse.json();
 
-                    if (statusResponse.status === 404) {
-                        outputContent.innerHTML = "Job not found.";
-                        clearInterval(intervalId);
-                        return;
-                    }
+                        if (statusResponse.status === 404) {
+                            outputContent.innerHTML = "Job not found.";
+                            clearInterval(intervalId);
+                            return;
+                        }
 
-                    outputContent.innerHTML = `
-                        Step: ${statusData.step}<br>
-                        Outcomes: <pre>${JSON.stringify(statusData.outcomes, null, 2)}</pre>
-                    `;
+                        // Create a formatted output of the job status
+                        let outputHtml = `
+                                <strong>Status:</strong> ${statusData.step}<br>
+                                <strong>Outcomes:</strong><br>
+                            `;
 
-                    if (statusData.step === 'Completed' || statusData.step === 'Error') {
+                        if (statusData.outcomes.extracted_data) {
+                            outputHtml += `<pre style="background: #f0f0f0; padding: 10px; border-radius: 4px; overflow-x: auto;">`;
+                            outputHtml += `Forms Data:\n${JSON.stringify(statusData.outcomes.extracted_data.forms, null, 2)}\n\n`;
+                            outputHtml += `Tables Data:\n${JSON.stringify(statusData.outcomes.extracted_data.tables, null, 2)}`;
+                            outputHtml += `</pre>`;
+                        } else if (statusData.outcomes.error) {
+                            outputHtml += `<div style="color: red;">Error: ${statusData.outcomes.error}</div>`;
+                        } else {
+                            outputHtml += `<pre>${JSON.stringify(statusData.outcomes, null, 2)}</pre>`;
+                        }
+
+                        outputContent.innerHTML = outputHtml;
+
+                        if (statusData.step === 'Completed' || statusData.step === 'Error') {
+                            clearInterval(intervalId);
+                        }
+                    } catch (error) {
+                        console.error("Error polling job status:", error);
+                        outputContent.innerHTML += `<br><span style="color: red;">Error checking job status: ${error.message}</span>`;
                         clearInterval(intervalId);
                     }
                 }, 2000);
 
             } catch (error) {
                 console.error("Error submitting job:", error);
-                alert("Failed to submit job.");
+                if (error instanceof SyntaxError) {
+                    alert("Invalid JSON configuration. Please check your JSON syntax.");
+                } else {
+                    alert("Failed to submit job: " + error.message);
+                }
             }
         });
 
-        // Smooth scrolling for navigation links
+        // Smooth scrolling code remains the same
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

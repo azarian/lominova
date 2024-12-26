@@ -71,32 +71,66 @@
             width: 100%;
         }
 
-        /* Hero Section */
-        #hero {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-        }
 
-        .hero-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
+        /* Updated Hero Section styles */
+        /* Updated Hero Section styles */
+    #hero {
+        position: relative;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        color: white;
+    }
 
-        .hero-text h1 {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
+    .hero-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+    }
 
-        .hero-image {
-            text-align: center;
-        }
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(76, 175, 80, 0.7), rgba(69, 160, 73, 0.7));
+        z-index: 2;
+    }
 
-        .hero-image img {
-            max-width: 100%;
-            height: auto;
-        }
+    .hero-content {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+        width: 100%;
+    }
+
+    .hero-text {
+        max-width: 800px;
+        text-align: center;
+    }
+
+    .hero-text h1 {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-text p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
 
         /* Try It Section */
         #try-it {
@@ -204,21 +238,16 @@
 
     <!-- Hero Section -->
     <section id="hero">
-        <div class="section-content">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1>Understanding Unstructured Content Made Simple</h1>
-                    <p>Leverage our powerful API to extract meaningful insights from any type of unstructured data.
-                        Perfect for businesses looking to automate content analysis and understanding.</p>
-                </div>
-                <div class="hero-image">
-                    <img src="{{ url_for('static', filename='images/hero-image.jpg') }}"
-                        alt="Content Understanding Visualization" width="1000" height="800">
-                </div>
+        <img src="{{ url_for('static', filename='images/hero-image.jpg') }}" alt="Content Understanding Visualization"
+            class="hero-background">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Understanding Unstructured Content Made Simple</h1>
+                <p>Leverage our powerful API to extract meaningful insights from any type of unstructured data.
+                    Perfect for businesses looking to automate content analysis and understanding.</p>
             </div>
         </div>
     </section>
-
     <!-- Try It Section -->
     <section id="try-it">
         <div class="section-content">

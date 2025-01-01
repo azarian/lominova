@@ -1,3 +1,4 @@
 watchdog
 flask
 amazon-textract-textractor
+boto3

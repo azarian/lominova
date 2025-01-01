@@ -6,18 +6,20 @@ import json
 from textractor import Textractor
 import boto3
 from botocore.exceptions import ClientError
+import html
+
 
 app = Flask(__name__)
 jobs = {}
 
-DRY_RUN = True
+DRY_RUN = False
 
 def initialize_textractor():
     """Initialize Textractor client with AWS credentials"""
     try:
         # Assuming AWS credentials are configured in the environment
         textract_client = boto3.client('textract')
-        return Textractor(textract_client=textract_client)
+        return Textractor(profile_name="default")
     except Exception as e:
         print(f"Error initializing Textractor: {e}")
         return None
@@ -41,27 +43,12 @@ def extract_document_info(file_path, textractor_client,dry_run=False):
         }
     try:
         # Process the document
-        document = textractor_client.process_document(file_path)
-        
-        # Extract forms (key-value pairs)
-        forms_dict = {}
-        for field in document.forms:
-            if field.key and field.value:  # Ensure both key and value exist
-                forms_dict[field.key.text] = field.value.text
-        
-        # Extract tables
-        tables_data = []
-        for table in document.tables:
-            table_data = []
-            for row in table.rows:
-                row_data = [cell.text if cell else "" for cell in row.cells]
-                table_data.append(row_data)
-            tables_data.append(table_data)
-        
+        document = textractor_client.detect_document_text(file_path,save_image=False)
+        text = document.get_text()
         return {
-            "forms": forms_dict,
-            "tables": tables_data,
-            "raw_text": document.text
+            "forms": text,
+            "tables": "Not Implemented",
+            "raw_text": text
         }
     except Exception as e:
         raise Exception(f"Error extracting document info: {str(e)}")
@@ -72,34 +59,9 @@ def validate_extracted_data(extracted_data, validation_config):
         "passed": True,
         "errors": []
     }
-    
-    for field, constraints in validation_config.items():
-        # Check in forms data
-        if field in extracted_data['forms']:
-            value = extracted_data['forms'][field]
-            
-            # Handle numeric validations
-            if any(op in constraints for op in ['>', '<', '>=', '<=']):
-                try:
-                    value = float(value)
-                    for op, threshold in constraints.items():
-                        if op == '>' and not value > threshold:
-                            validation_results['errors'].append(f"{field} must be greater than {threshold}")
-                        elif op == '<' and not value < threshold:
-                            validation_results['errors'].append(f"{field} must be less than {threshold}")
-                        elif op == '>=' and not value >= threshold:
-                            validation_results['errors'].append(f"{field} must be greater than or equal to {threshold}")
-                        elif op == '<=' and not value <= threshold:
-                            validation_results['errors'].append(f"{field} must be less than or equal to {threshold}")
-                except ValueError:
-                    validation_results['errors'].append(f"{field} must be a number")
-            
-            # Handle required fields
-            if constraints.get('required', False) and not value:
-                validation_results['errors'].append(f"{field} is required but empty")
-
-    validation_results['passed'] = len(validation_results['errors']) == 0
     return validation_results
+    
+    
 
 def process_job(job_id, file_path, config):
     try:
@@ -122,11 +84,6 @@ def process_job(job_id, file_path, config):
         if not validation_results['passed']:
             jobs[job_id]['step'] = 'Validation Failed'
             return
-        
-        # Write to Google Sheets (placeholder - implement your Google Sheets logic)
-        jobs[job_id]['step'] = 'Writing to Google Sheets'
-        google_sheet_url = config['load']['output']
-        # Add your Google Sheets writing logic here
         
         jobs[job_id]['outcomes']['extracted_data'] = extracted_data
         jobs[job_id]['step'] = 'Completed'
